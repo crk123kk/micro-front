@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <p id="outP">hello world</p>
+      <div id="shadow"></div>
+    </div>
+    <script>
+      /**
+       *    这里主要是用于实现css隔离的实现机制的demo
+       *    利用浏览器的 dom Api 来实现， 添加 shadow来实现css样式隔离，真正意义上的样式隔离
+       * */
+      let shadowDOM = shadow.attachShadow({ mode: 'closed' });
+      // 外界无法访问shadow dom， 类似于 页面中的 video对象，video对象真实存在于window中，
+      // 但是我们无法访问并且通过控制其属性来改变其大小等属性
+      let pElm = document.createElement('p');
+      pElm.innerHTML = 'hello crk';
+      let styleElm = document.createElement('style');
+      styleElm.textContent = `
+        p{color: red}
+      `;
+      //   outP.appendChild(styleElm);
+      shadowDOM.appendChild(styleElm);
+      shadowDOM.appendChild(pElm);
+
+      // 这里需要注意的是，如果把标签移到body之外，样式就控制不到了
+      // react中的一些 弹框就会加到body之外
+      document.body.appendChild(pElm);
+    </script>
+  </body>
+</html>

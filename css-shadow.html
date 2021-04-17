@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 如果应用加载不同的子应用的时候，A应用和B应用中同时都会有window.a的创建和使用，这时候就会出现问题
+      // 单应用切换：利用沙箱，创建一个干净的环境给这个子应用使用，当切换的时候，可以选择丢弃属性和恢复属性
+
+      // js沙箱： proxy
+
+      // 快照沙箱： 1、状态一  2、状态二（保留状态二与状态一的区别）
+      // 当切换状态一的时候使用状态一，当再切回状态二的时候，将状态二与状态一的区别应用到状态一种
+      class SnapshotSandbox {
+        constructor() {
+          // window属性
+          this.proxy = window;
+          // 记录在window上的修改
+          this.modifyPropsMap = {};
+          this.active();
+        }
+        active() {
+          // 保存一份快照
+          this.windowSnapshot = {};
+          for (const prop in window) {
+            if (window.hasOwnProperty(prop)) {
+              this.windowSnapshot[prop] = window[prop];
+            }
+          }
+          // 当激活的时候，将变化的属性重新赋值回给原属性（状态一 =》 状态而）
+          Object.keys(this.modifyPropsMap).forEach((p) => {
+            window[p] = this.modifyPropsMap[p];
+          });
+        }
+        inactive() {
+          for (const prop in window) {
+            if (window.hasOwnProperty(prop)) {
+              if (window[prop] !== this.windowSnapshot[prop]) {
+                // 当失活的时候，将发生变化的属性保存起来，留存变化
+                this.modifyPropsMap[prop] = window[prop];
+                // 将变化后的属性赋值给window：（状态二 =》 状态一
+                window[prop] = this.windowSnapshot[prop];
+              }
+            }
+          }
+        }
+      }
+      let sandbox = new SnapshotSandbox();
+
+      // 沙箱：应用的运行，从开始到结束，切换过程不会影响全局
+      ((window) => {
+        // 类似模拟，这时候加载应用A
+        window.a = 1;
+        window.b = 2;
+        console.log(window.a, window.b);
+        // 这时候切换应用B了。。所以需要吧应用A的window给失活或者说还原，从而可以变成应用B的状态
+        sandbox.inactive();
+        console.log(window.a, window.b);
+        // 这时候又要切换回应用A。。所以需要把应用B的window重新激活，或者说重置成应用A的状态
+        sandbox.active();
+        console.log(window.a, window.b);
+      })(sandbox.proxy); // sandbox.proxy就是window
+
+      // 如果是多个子应用就不能使用这种方式了。可以使用es6的proxy
+
+      // 代理沙箱可以实现多应用沙箱，把不同的应用用不同的代理来处理
+    </script>
+  </body>
+</html>
